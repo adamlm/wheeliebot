@@ -1,6 +1,7 @@
 # Project specific items
 
 build
+*.code-workspace
 
 
 # Covers Visual Studio Code (VS Code)
