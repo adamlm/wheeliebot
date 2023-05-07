@@ -7,8 +7,9 @@ build
 # Covers Visual Studio Code (VS Code)
 # Reference: https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
 
-.vscode
-#.vscode/*
+.vscode/*
+!.vscode/cmake-kits.json
+!.vscode/source_ros_overlay.sh
 # !.vscode/settings.json
 # !.vscode/tasks.json
 # !.vscode/launch.json

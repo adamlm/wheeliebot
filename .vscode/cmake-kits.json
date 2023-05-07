@@ -1,0 +1,10 @@
+[
+    {
+        "name": "ROS 2 Kit",
+        "compilers": {
+            "C": "/usr/bin/clang",
+            "CXX": "/usr/bin/clang++"
+        },
+        "environmentSetupScript": "${workspaceFolder}/.vscode/source_ros_overlay.sh"
+    }
+]
