@@ -35,8 +35,10 @@ class PathPlannerNode : public rclcpp::Node {
 
   private:
     auto publishPath() -> void {
-        const wheel::R2Vector source{current_pose_.pose.position.x, current_pose_.pose.position.y};
-        const wheel::R2Vector goal{goal_pose_.pose.position.x, goal_pose_.pose.position.y};
+        const wheel::R2Vector source{static_cast<float>(current_pose_.pose.position.x),
+                                     static_cast<float>(current_pose_.pose.position.y)};
+        const wheel::R2Vector goal{static_cast<float>(goal_pose_.pose.position.x),
+                                   static_cast<float>(goal_pose_.pose.position.y)};
 
         const auto path = wheel::findRrtPath(space_sampler_, source, goal);
 
@@ -51,8 +53,8 @@ class PathPlannerNode : public rclcpp::Node {
                                        geometry_msgs::msg::PoseStamped pose;
 
                                        pose.header.frame_id = "base_link";
-                                       pose.pose.position.x = config.x;
-                                       pose.pose.position.y = config.y;
+                                       pose.pose.position.x = static_cast<double>(config.template get<wheel::X>());
+                                       pose.pose.position.y = static_cast<double>(config.template get<wheel::Y>());
 
                                        return pose;
                                    });
