@@ -13,10 +13,13 @@ ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 ENV ROS_DISTRO humble
 
-# Install ROS 2
+# Install ROS 2 and colcon
 RUN apt update \
     && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends \
         ros-humble-ros-core=0.10.0-1* \
+        ros-humble-ament-cmake-clang-tidy \
+        ros-humble-ament-cmake-clang-format \
+        python3-colcon-common-extensions \
     && rm -rf /var/lib/apt/lists/*
 
 # Set up ROS 2 overlay sourcing for terminal
@@ -27,3 +30,5 @@ RUN apt update \
     && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends \
         libboost-graph1.74-dev \
     && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /workspace/src && chown -R ${USERNAME}:${USERNAME} /workspace
