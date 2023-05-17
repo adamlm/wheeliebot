@@ -12,20 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.8)
-project(wheeliebot_launch)
-enable_testing()
-
-include(dependencies.cmake)
-
-include(GNUInstallDirs)
-
-install(DIRECTORY launch
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/wheeliebot/
-)
+find_package(ament_cmake REQUIRED)
 
 if(BUILD_TESTING)
-  ament_lint_auto_find_test_dependencies()
+  find_package(ament_lint_auto REQUIRED)
 endif()
-
-ament_package()

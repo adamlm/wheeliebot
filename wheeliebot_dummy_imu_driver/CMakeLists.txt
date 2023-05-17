@@ -27,6 +27,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ${wheeliebot_dummy_imu_driver_EXPORT_COMPILE_C
 include(dependencies.cmake)
 
 if(BUILD_TESTING)
+  # Using clang-tidy instead of cpplint
+  set(ament_cmake_cpplint_FOUND TRUE)
+
+  # Using clang-format instead of uncrustify
+  set(ament_cmake_uncrustify_FOUND TRUE)
+
   ament_lint_auto_find_test_dependencies()
 endif()
 
