@@ -13,19 +13,33 @@
 # limitations under the License.
 
 cmake_minimum_required(VERSION 3.8)
-project(wheeliebot_launch)
+project(wheeliebot_dummy_localizer)
 enable_testing()
+
+option(
+  wheeliebot_dummy_localizer_EXPORT_COMPILE_COMMANDS
+  "Export compile commands for the wheeliebot dummy IMU driver package"
+  ON
+)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ${wheeliebot_dummy_localizer_EXPORT_COMPILE_COMMANDS})
 
 include(dependencies.cmake)
 
-include(GNUInstallDirs)
-
-install(DIRECTORY launch
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/wheeliebot_launch
-)
+# If there is a `build` directory in the package, colcon will try to build the
+# package(s) within that directory, causing an error.
+file(TOUCH ${PROJECT_BINARY_DIR}/COLCON_IGNORE)
 
 if(BUILD_TESTING)
+  # Using clang-tidy instead of cpplint
+  set(ament_cmake_cpplint_FOUND TRUE)
+
+  # Using clang-format instead of uncrustify
+  set(ament_cmake_uncrustify_FOUND TRUE)
+
   ament_lint_auto_find_test_dependencies()
 endif()
+
+add_subdirectory(src)
 
 ament_package()

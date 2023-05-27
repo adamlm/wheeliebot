@@ -12,20 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.8)
-project(wheeliebot_launch)
-enable_testing()
+from launch_ros.actions import Node
+from launch import LaunchDescription
 
-include(dependencies.cmake)
 
-include(GNUInstallDirs)
+def generate_launch_description():
+    localizer_node = Node(
+        package="wheeliebot_dummy_localizer",
+        executable="dummy_localizer_node",
+        name="localizer",
+    )
 
-install(DIRECTORY launch
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/wheeliebot_launch
-)
-
-if(BUILD_TESTING)
-  ament_lint_auto_find_test_dependencies()
-endif()
-
-ament_package()
+    return LaunchDescription([localizer_node])
