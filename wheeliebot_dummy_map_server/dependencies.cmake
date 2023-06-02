@@ -12,21 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from launch_ros.actions import Node
-from launch import LaunchDescription
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(nav_msgs REQUIRED)
 
-
-def generate_launch_description():
-    localizer_node = Node(
-        package="wheeliebot_dummy_localizer",
-        executable="dummy_localizer_node",
-        name="localizer",
-    )
-
-    mapping_node = Node(
-        package="wheeliebot_dummy_map_server",
-        executable="dummy_map_server_node",
-        name="map_server"
-    )
-
-    return LaunchDescription([localizer_node, mapping_node])
+if(BUILD_TESTING)
+  find_package(ament_cmake_clang_format REQUIRED)
+  find_package(ament_cmake_clang_tidy REQUIRED)
+  find_package(ament_lint_auto REQUIRED)
+endif()
