@@ -20,7 +20,11 @@ target_link_libraries(path_planner_node
   libwheel::motion_planning
 )
 
-ament_target_dependencies(path_planner_node rclcpp nav_msgs)
+ament_target_dependencies(path_planner_node
+  rclcpp
+  nav_msgs
+  geometry_msgs
+)
 
 target_compile_features(path_planner_node
   PRIVATE
