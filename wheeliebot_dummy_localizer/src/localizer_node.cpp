@@ -38,9 +38,9 @@ public:
   {
     const auto timestamp{get_clock()->now()};
 
-    const auto x_offset{1.0};
-    const auto y_offset{2.0};
-    const auto z_offset{3.0};
+    const auto x_offset{0.0};
+    const auto y_offset{0.0};
+    const auto z_offset{0.0};
 
     nav_msgs::msg::Odometry odom_msg;
     odom_msg.header.stamp = timestamp;
@@ -67,9 +67,9 @@ public:
     map_tf.header.stamp = timestamp;
     map_tf.header.frame_id = "map";
     map_tf.child_frame_id = "odom";
-    map_tf.transform.translation.x = 1.0;
-    map_tf.transform.translation.y = 1.0;
-    map_tf.transform.translation.z = 1.0;
+    map_tf.transform.translation.x = 0.0;
+    map_tf.transform.translation.y = 0.0;
+    map_tf.transform.translation.z = 0.0;
 
     odom_publisher_->publish(odom_msg);
     odom_broadcaster_->sendTransform(odom_tf);
