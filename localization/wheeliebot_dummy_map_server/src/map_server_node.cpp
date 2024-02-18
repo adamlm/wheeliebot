@@ -40,6 +40,7 @@ public:
     msg.info.resolution = 1.0F;
 
     msg.data.resize(10U * 10U, 0U);
+    msg.data.at(5 * 5) = 100;
 
     map_publisher_->publish(msg);
   }
