@@ -1,0 +1,39 @@
+{
+  "name": "ROS 2 Humble",
+  "image": "mcr.microsoft.com/devcontainers/cpp:ubuntu-22.04",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "esbenp.prettier-vscode",
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "ms-python.python",
+        "ms-vscode.cpptools-extension-pack",
+        "streetsidesoftware.code-spell-checker",
+        "timonwong.shellcheck"
+      ]
+    }
+  },
+  "features": {
+    "ghcr.io/adamlm/devcontainer-features/cmake": {
+      "version": "3.27.4"
+    },
+    "ghcr.io/adamlm/devcontainer-features/ros2": {
+      "version": "humble"
+    },
+    "ghcr.io/devcontainers/features/node": {
+      "version": "lts"
+    }
+  },
+  "capAdd": [
+    "SYS_PTRACE" // Allows debugging inside container
+  ],
+  "mounts": [
+    "source=/Users/adam/webots_docker_shared,target=/home/vscode/webots_docker_shared,type=bind"
+  ],
+  "securityOpt": ["seccomp=unconfined"], // Allows debugging inside container
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace/src/${localWorkspaceFolderBasename},type=bind",
+  "workspaceFolder": "/workspace/src/${localWorkspaceFolderBasename}",
+  "remoteUser": "vscode",
+  "containerUser": "vscode"
+}
