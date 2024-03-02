@@ -1,4 +1,4 @@
-# Copyright 2023 Adam Morrissett
+# Copyright 2024 Adam Morrissett
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,26 +15,19 @@
 cmake_minimum_required(VERSION 3.22)
 project(wheeliebot_path_planner)
 
-option(
-  wheeliebot_path_planner_EXPORT_COMPILE_COMMANDS
-  "Export compile commands for the wheeliebot path planner package"
-  ON
-)
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ${wheeliebot_path_planner_EXPORT_COMPILE_COMMANDS})
-
 include(dependencies.cmake)
 
-add_subdirectory(src)
+ament_auto_add_library(wheeliebot_path_planner SHARED
+  src/bfs_path_planner_component.cpp
+  src/boost_graph_extensions.cpp
+)
 
-if(BUILD_TESTING)
-  # Using clang-tidy instead of cpplint
-  set(ament_cmake_cpplint_FOUND TRUE)
+rclcpp_components_register_nodes(wheeliebot_path_planner
+  "wheeliebot_path_planner::BfsPathPlannerComponent"
+)
 
-  # Using clang-format instead of uncrustify
-  set(ament_cmake_uncrustify_FOUND TRUE)
+ament_auto_add_executable(wheeliebot_bfs_path_planner_node
+  src/bfs_path_planner_node.cpp
+)
 
-  ament_lint_auto_find_test_dependencies()
-endif()
-
-ament_package()
+ament_auto_package()
