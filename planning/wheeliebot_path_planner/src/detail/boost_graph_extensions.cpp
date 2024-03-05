@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "wheeliebot_path_planner/boost_graph_extensions.hpp"
+#include "wheeliebot_path_planner/detail/boost_graph_extensions.hpp"
 
 #include <boost/graph/adjacency_list.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
@@ -21,7 +21,7 @@
 #include <range/v3/view/zip.hpp>
 #include <rclcpp/rclcpp.hpp>
 
-namespace wheeliebot_path_planner
+namespace wheeliebot_path_planner::detail
 {
 auto to_boost_graph(nav_msgs::msg::OccupancyGrid const & occupancy_grid) -> PositionGrid
 {
@@ -59,4 +59,4 @@ auto to_boost_graph(nav_msgs::msg::OccupancyGrid const & occupancy_grid) -> Posi
   return position_grid;
 }
 
-}  // namespace wheeliebot_path_planner
+}  // namespace wheeliebot_path_planner::detail

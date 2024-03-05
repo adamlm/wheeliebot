@@ -19,7 +19,7 @@ include(dependencies.cmake)
 
 ament_auto_add_library(wheeliebot_path_planner SHARED
   src/bfs_path_planner_component.cpp
-  src/boost_graph_extensions.cpp
+  src/detail/boost_graph_extensions.cpp
 )
 
 rclcpp_components_register_nodes(wheeliebot_path_planner
