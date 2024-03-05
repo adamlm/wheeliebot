@@ -24,7 +24,7 @@
 #include <nav_msgs/msg/path.hpp>
 #include <rclcpp/rclcpp.hpp>
 
-#include "wheeliebot_path_planner/boost_graph_extensions.hpp"
+#include "wheeliebot_path_planner/detail/boost_graph_extensions.hpp"
 
 namespace wheeliebot_path_planner
 {
@@ -43,7 +43,7 @@ public:
 private:
   std::optional<nav_msgs::msg::Odometry> current_state_{std::nullopt};
   std::optional<geometry_msgs::msg::PoseStamped> target_pose_{std::nullopt};
-  std::optional<PositionGrid> planning_grid_{std::nullopt};
+  std::optional<detail::PositionGrid> planning_grid_{std::nullopt};
 
   rclcpp::TimerBase::SharedPtr path_publication_timer_{nullptr};
 

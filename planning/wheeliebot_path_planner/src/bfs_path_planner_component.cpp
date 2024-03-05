@@ -28,10 +28,34 @@
 #include <range/v3/view/zip.hpp>
 #include <rclcpp/rclcpp.hpp>
 
-#include "wheeliebot_path_planner/boost_graph_extensions.hpp"
+#include "wheeliebot_path_planner/detail/boost_graph_extensions.hpp"
 
 namespace wheeliebot_path_planner
 {
+namespace
+{
+auto get_position_x(nav_msgs::msg::Odometry const & msg) { return msg.pose.pose.position.x; }
+
+auto get_position_x(geometry_msgs::msg::PoseStamped const & msg) { return msg.pose.position.x; }
+
+auto get_position_x(detail::Point2d const & point) { return point.x; }
+
+auto get_position_y(nav_msgs::msg::Odometry const & msg) { return msg.pose.pose.position.y; }
+
+auto get_position_y(geometry_msgs::msg::PoseStamped const & msg) { return msg.pose.position.y; }
+
+auto get_position_y(detail::Point2d const & point) { return point.y; }
+
+template <typename T, typename U>
+auto pythagorean_distance(T const & a, U const & b)
+{
+  auto const delta_x{get_position_x(a) - get_position_x(b)};
+  auto const delta_y{get_position_y(a) - get_position_y(b)};
+
+  return std::hypot(delta_x, delta_y);
+}
+}  // namespace
+
 BfsPathPlannerComponent::BfsPathPlannerComponent() : BfsPathPlannerComponent{rclcpp::NodeOptions{}}
 {
 }
@@ -70,46 +94,8 @@ auto BfsPathPlannerComponent::update_target_pose(geometry_msgs::msg::PoseStamped
 
 auto BfsPathPlannerComponent::update_planning_grid(nav_msgs::msg::OccupancyGrid const & msg) -> void
 {
-  planning_grid_ = to_boost_graph(msg);
+  planning_grid_ = detail::to_boost_graph(msg);
 }
-
-template <typename Graph>
-struct EarlySearchTermination
-{
-public:
-  EarlySearchTermination(typename boost::graph_traits<Graph>::vertex_descriptor vertex)
-  : vertex_{vertex}
-  {
-  }
-
-  auto get_last_vertex() const noexcept { return vertex_; }
-
-private:
-  typename boost::graph_traits<Graph>::vertex_descriptor vertex_;
-};
-
-template <typename Graph>
-struct is_target_vertex : public boost::base_visitor<is_target_vertex<Graph>>
-{
-public:
-  using event_filter = boost::on_tree_edge;
-
-  explicit is_target_vertex(typename boost::graph_traits<Graph>::vertex_descriptor target_vertex)
-  : target_vertex_{target_vertex}
-  {
-  }
-
-  auto operator()(typename boost::graph_traits<Graph>::edge_descriptor e, Graph const & g) const
-    -> void
-  {
-    if (auto const v{boost::target(e, g)}; v == target_vertex_) {
-      throw EarlySearchTermination<Graph>(v);
-    }
-  }
-
-private:
-  typename boost::graph_traits<Graph>::vertex_descriptor target_vertex_;
-};
 
 auto BfsPathPlannerComponent::make_path() -> std::optional<nav_msgs::msg::Path>
 {
@@ -130,78 +116,43 @@ auto BfsPathPlannerComponent::make_path() -> std::optional<nav_msgs::msg::Path>
 
   auto const & current_state{current_state_.value()};
   auto const & target_pose{target_pose_.value()};
-  auto & planning_grid{planning_grid_.value()};
+  auto const & planning_grid{planning_grid_.value()};
 
   auto const vertex_range{boost::make_iterator_range(boost::vertices(planning_grid))};
-  auto const closest_vertex{ranges::min_element(
-    vertex_range, [&target_pose = std::as_const(target_pose),
-                   &planning_grid = std::as_const(planning_grid)](auto const & a, auto const & b) {
-      auto const delta_x_a{planning_grid[a].x - target_pose.pose.position.x};
-      auto const delta_y_a{planning_grid[a].y - target_pose.pose.position.y};
 
-      auto const delta_x_b{planning_grid[b].x - target_pose.pose.position.x};
-      auto const delta_y_b{planning_grid[b].y - target_pose.pose.position.y};
-
-      return std::hypot(delta_x_a, delta_y_a) < std::hypot(delta_x_b, delta_y_b);
+  auto const source_vertex{
+    *ranges::min_element(vertex_range, {}, [&current_state, &planning_grid](auto const & v) {
+      return pythagorean_distance(current_state, planning_grid[v]);
     })};
 
-  auto const target_pose_vertex{boost::add_vertex(
-    Point2d{target_pose.pose.position.x, target_pose.pose.position.y}, planning_grid)};
-  boost::add_edge(target_pose_vertex, *closest_vertex, planning_grid);
-
-  auto const closest_current_vertex{ranges::min_element(
-    vertex_range, [&current_state = std::as_const(current_state),
-                   &planning_grid = std::as_const(planning_grid)](auto const & a, auto const & b) {
-      auto const delta_x_a{planning_grid[a].x - current_state.pose.pose.position.x};
-      auto const delta_y_a{planning_grid[a].y - current_state.pose.pose.position.y};
-
-      auto const delta_x_b{planning_grid[b].x - current_state.pose.pose.position.x};
-      auto const delta_y_b{planning_grid[b].y - current_state.pose.pose.position.y};
-
-      return std::hypot(delta_x_a, delta_y_a) < std::hypot(delta_x_b, delta_y_b);
+  auto const target_vertex{
+    *ranges::min_element(vertex_range, {}, [&target_pose, &planning_grid](auto const & v) {
+      return pythagorean_distance(target_pose, planning_grid[v]);
     })};
-
-  RCLCPP_DEBUG_STREAM(get_logger(), "Closest vertex: " << std::to_string(*closest_current_vertex));
-  RCLCPP_DEBUG_STREAM(
-    get_logger(), "Vertex 25: x = " << planning_grid[25].x << ", y = " << planning_grid[25].y);
-
-  auto const current_pose_vertex{boost::add_vertex(
-    Point2d{current_state.pose.pose.position.x, current_state.pose.pose.position.y},
-    planning_grid)};
-  boost::add_edge(current_pose_vertex, *closest_current_vertex, planning_grid);
-
-  using PredecessorList = std::vector<std::optional<int>>;
-  PredecessorList predecessors(boost::num_vertices(planning_grid), std::nullopt);
-
-  auto const predecessor_recorder{
-    boost::record_predecessors(predecessors.data(), boost::on_tree_edge{})};
-  auto const visitor{boost::make_bfs_visitor(
-    std::pair{predecessor_recorder, is_target_vertex<PositionGrid>{target_pose_vertex}})};
 
   nav_msgs::msg::Path path;
   path.header.frame_id = "map";
 
-  try {
-    RCLCPP_DEBUG_STREAM(
-      get_logger(), "Current pose vertex: " << std::to_string(current_pose_vertex));
-    RCLCPP_DEBUG_STREAM(get_logger(), "Target pose vertex: " << std::to_string(target_pose_vertex));
-    boost::breadth_first_search(planning_grid, current_pose_vertex, boost::visitor(visitor));
-  } catch (EarlySearchTermination<PositionGrid> const & result) {
-    for (typename PredecessorList::value_type predecessor{result.get_last_vertex()};
-         predecessor != std::nullopt; predecessor = predecessors.at(predecessor.value())) {
-      geometry_msgs::msg::PoseStamped pose;
-      pose.header.frame_id = "map";
-      pose.pose.position.x = planning_grid[predecessor.value()].x;
-      pose.pose.position.y = planning_grid[predecessor.value()].y;
+  if (auto const vertex_path{
+        detail::find_vertex_path(source_vertex, target_vertex, planning_grid)}) {
+    geometry_msgs::msg::PoseStamped pose;
+    pose.header.frame_id = "map";
 
-      path.poses.push_back(std::move(pose));
+    pose.pose.position.x = get_position_x(current_state);
+    pose.pose.position.y = get_position_y(current_state);
+    path.poses.push_back(pose);
+
+    for (auto const & vertex : vertex_path.value()) {
+      pose.pose.position.x = get_position_x(planning_grid[vertex]);
+      pose.pose.position.y = get_position_y(planning_grid[vertex]);
+
+      path.poses.push_back(pose);
     }
 
-    std::reverse(std::begin(path.poses), std::end(path.poses));
+    pose.pose.position.x = get_position_x(target_pose);
+    pose.pose.position.y = get_position_y(target_pose);
+    path.poses.push_back(pose);
   }
-
-  boost::remove_vertex(current_pose_vertex, planning_grid);
-  boost::remove_vertex(target_pose_vertex, planning_grid);
 
   return path;
 }
