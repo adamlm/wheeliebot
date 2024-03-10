@@ -18,12 +18,18 @@ project(wheeliebot_path_planner)
 include(dependencies.cmake)
 
 ament_auto_add_library(wheeliebot_path_planner SHARED
+  src/a_star_path_planner_component.cpp
   src/bfs_path_planner_component.cpp
   src/detail/boost_graph_extensions.cpp
 )
 
 rclcpp_components_register_nodes(wheeliebot_path_planner
+  "wheeliebot_path_planner::AStarPathPlannerComponent"
   "wheeliebot_path_planner::BfsPathPlannerComponent"
+)
+
+ament_auto_add_executable(wheeliebot_a_star_path_planner_node
+  src/a_star_path_planner_node.cpp
 )
 
 ament_auto_add_executable(wheeliebot_bfs_path_planner_node
