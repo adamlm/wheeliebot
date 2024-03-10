@@ -18,6 +18,7 @@
 #include <vector>
 
 #include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/astar_search.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
@@ -91,6 +92,89 @@ auto find_vertex_path(
         TargetVertexChecker<Graph>{target}})));
   } catch (EarlySearchTermination<Graph> const & result) {
     std::vector<vertex_descriptor_t<Graph>> path_vertices;
+
+    for (std::optional<vertex_descriptor_t<Graph>> vertex{result.get_terminal_vertex()};
+         vertex.has_value(); vertex = predecessors.at(vertex.value())) {
+      path_vertices.push_back(vertex.value());
+    }
+
+    std::reverse(std::begin(path_vertices), std::end(path_vertices));
+    return path_vertices;
+  }
+
+  return std::nullopt;
+}
+
+template <typename Graph>
+struct AStarTargetVertexChecker : public boost::default_astar_visitor
+{
+public:
+  explicit AStarTargetVertexChecker(vertex_descriptor_t<Graph> target) : target_{target} {}
+
+  auto examine_vertex(vertex_descriptor_t<Graph> v, Graph const & g)
+  {
+    if (v == target_) {
+      throw EarlySearchTermination<Graph>(v);
+    }
+  }
+
+private:
+  vertex_descriptor_t<Graph> target_;
+};
+
+template <class Graph>
+class distance_heuristic : public boost::astar_heuristic<Graph, double>
+{
+public:
+  distance_heuristic(vertex_descriptor_t<Graph> target, Graph const & graph)
+  : target_{target}, graph_{graph}
+  {
+  }
+
+  double operator()(vertex_descriptor_t<Graph> v)
+  {
+    auto const delta_x{graph_.get()[target_].x - graph_.get()[v].x};
+    auto const delta_y{graph_.get()[target_].y - graph_.get()[v].y};
+
+    return std::hypot(delta_x, delta_y);
+  }
+
+private:
+  std::reference_wrapper<Graph const> graph_;
+  vertex_descriptor_t<Graph> target_;
+};
+
+template <typename Graph>
+auto find_vertex_path_a_star(
+  vertex_descriptor_t<Graph> source, vertex_descriptor_t<Graph> target, Graph const & graph)
+  -> std::optional<std::vector<vertex_descriptor_t<Graph>>>
+{
+  std::vector<vertex_descriptor_t<Graph>> predecessors(boost::num_vertices(graph));
+
+  auto index = boost::get(boost::vertex_index, graph);
+  auto pmap = boost::make_safe_iterator_property_map(
+    std::begin(predecessors), std::size(predecessors), index);
+
+  try {
+    boost::astar_search(
+      graph, source, distance_heuristic<Graph>(source, graph),
+      boost::visitor(AStarTargetVertexChecker<Graph>(target))
+        .weight_map(boost::static_property_map<double>{1.0})
+        .predecessor_map(pmap));
+  } catch (EarlySearchTermination<Graph> const & result) {
+    std::vector<vertex_descriptor_t<Graph>> path_vertices;
+
+    std::vector<vertex_descriptor_t<Graph>> p;
+    for (auto cursor = target;;) {
+      p.push_back(cursor);
+      auto previous = std::exchange(cursor, predecessors.at(cursor));
+      if (cursor == previous) {
+        break;
+      }
+    }
+
+    std::reverse(std::begin(p), std::end(p));
+    return p;
 
     for (std::optional<vertex_descriptor_t<Graph>> vertex{result.get_terminal_vertex()};
          vertex.has_value(); vertex = predecessors.at(vertex.value())) {
